@@ -1,16 +1,21 @@
 # Author: Cameron Blankenship
 # Date: 8/3/2021
-# Description:
+# Description: A game of Quoridor with classes representing the board as
+#              a 9 x 9 grid and two players. Players take turns either moving their pawn
+#              one cell or placing a fence to block the movement of the other player.
+#              If either player reaches the base line of the other player, the game is
+#              won by that player.
 
 class QuoridorGame:
     """Represents a Quoridor game that has a Board and two Players.
-    Players take turns either moving or placing Fences to block the
+    Players take turns either moving or placing fences to block the
     other Player. If either Player reaches the base line of the other
     Player, the game is won by that Player.
     This class is responsible for initializing the game with a Board
     with two Players, and tracking Player turn. This class will have
     the Player class and Board class as data members, thus utilizing
-    composition."""
+    composition. This class is also responsible for tracking the player
+    turns."""
 
     def __init__(self):
         """Initializes the game Board, Players 1 and 2, sets it as
@@ -25,11 +30,11 @@ class QuoridorGame:
         return self._Board
 
     def get_p1(self):
-        """Returns P1."""
+        """Returns Player 1."""
         return self._P1
 
     def get_p2(self):
-        """Returns P2."""
+        """Returns Player 2."""
         return self._P2
 
     def get_player_turn(self):
@@ -40,15 +45,34 @@ class QuoridorGame:
         """Sets turn to given Player."""
         self._player_turn = player
 
+    def move_pawn(self, player, coordinates):
+        """Moves the given Player to the given coordinates on the Board, if
+        it is a valid move. If move is forbidden or game has already won,
+        return False. Otherwise return True."""
+        pass
+
+    def place_fence(self, player, fence_type, coordinates):
+        """Places a given Player's fence of given fence_type at the given
+        coordinates, if it is a valid fence placement. If not a valid
+        fence placement or game has already been won, return False.
+        Otherwise return True."""
+        pass
+
+    def is_winner(self, player):
+        """Returns True if a given Player is the winner of the game.
+        Otherwise returns False."""
+        pass
+
 
 class Board:
     """Represents the game board as a list of tuples that act as coordinates
-    on the Board. Each cell is referenced by the top left corner.
-    This class is responsible for storing where each player is and validating
-    Player movements, as well as where each fence is placed and validating
-    fence placement.
-    This class will communicate with Player and QuoridorGame in order to
-    validate Player moves and fence placement """
+    on the Board. Each coordinate represents a cell and is referenced by the top left
+    corner. This class also has two lists that store the coordinates of vertical fences and
+    horizontal fences.
+    This class is also responsible for validating Player movements, as
+    well as where each fence is placed and validating fence placement. This class will
+    communicate with Player and QuoridorGame in order to validate Player moves and fence
+    placement."""
 
     def __init__(self):
         """Initializes the game board by storing the coordinates of the cells
@@ -74,10 +98,6 @@ class Board:
         """Returns the list of horizontal fence coordinates."""
         return self._h_fence
 
-    def print_board(self):
-        """Prints the board out for debugging purposes."""
-        pass
-
     def validate_fence_place(self, coordinates):
         """Validates the placement of the fences by ensuring that no fence
         is already at the given coordinates parameter, that the player has
@@ -90,6 +110,10 @@ class Board:
         blocking their path, that the move is inbounds of the board, and
         that the move is valid given the circumstance.
         Takes a coordinates parameter."""
+        pass
+
+    def print_board(self):
+        """Prints the board out for debugging purposes."""
         pass
 
 
@@ -123,23 +147,6 @@ class Player:
         """Returns the number of fences the Player has."""
         return self._fences
 
-    def move_pawn(self, player, coordinates):
-        """Moves the given Player to the given coordinates on the Board, if
-        it is a valid move. If move is forbidden or game has already won,
-        return False. Otherwise return True."""
-        pass
-
-    def place_fence(self, player, fence_type, coordinates):
-        """Places a given Player's fence of given fence_type at the given
-        coordinates, if it is a valid fence placement. If not a valid
-        fence placement or game has already been won, return False.
-        Otherwise return True."""
-        pass
-
-    def is_winner(self, player):
-        """Returns True if a given Player is the winner of the game.
-        Otherwise returns False."""
-        pass
 
 
 """DETAILED TEXT DESCRIPTIONS OF HOW TO HANDLE THE SCENARIOS
@@ -222,15 +229,17 @@ were placed in the list that corresponds to the orientation of the fence.
         
 6. How to track fences on and off the board:
 
-    player has data member that will keep track of fence count.
-    each time player places a new fence, the count will be decremented.
-    if count is 0, player will not be able to place fence.
+    Player has data member that will keep track of fence count.
+    Each time player places a new fence, the count will be decremented.
+    If count is 0, player will not be able to place fence.
     
-    fences on the board will be tracked by two lists. One for vertical
+    Fences on the board will be tracked by two lists. One for vertical
     fences and one for horizontal fences.
     
 7. How to track the pawn's position on the board:
 
     player position will be stored as a data member in the Player class.
     It will have a get and set method in order to access and change.
+    Position will be cross-referenced with fence lists in Board class to ensure
+    validity of move.
     """
