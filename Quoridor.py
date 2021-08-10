@@ -1,5 +1,5 @@
 # Author: Cameron Blankenship
-# Date: 8/3/2021
+# Date: 8/9/2021
 # Description: A game of Quoridor with classes representing the board as
 #              a 9 x 9 grid and two players. Players take turns either moving their pawn
 #              one cell or placing a fence to block the movement of the other player.
@@ -20,9 +20,9 @@ class QuoridorGame:
     def __init__(self):
         """Initializes the game Board, Players 1 and 2, sets it as
         the first Player's turn."""
-        self._Board = Board()
         self._P1 = Player(1)
         self._P2 = Player(2)
+        self._Board = Board()
         self._player_turn = 1
 
     def get_board(self):
@@ -45,23 +45,53 @@ class QuoridorGame:
         """Sets turn to given Player."""
         self._player_turn = player
 
-    def move_pawn(self, player, coordinates):
+    def move_pawn(self, player_num, coordinates):
         """Moves the given Player to the given coordinates on the Board, if
         it is a valid move. If move is forbidden or game has already won,
         return False. Otherwise return True."""
-        pass
+        if self.is_winner(1):
+            return False
+        if self.is_winner(2):
+            return False
+        if not self._Board.validate_pawn_move(coordinates):
+            return False
+        self.get_board().set_player_positions(player_num, coordinates)
+        return True
 
-    def place_fence(self, player, fence_type, coordinates):
+    def place_fence(self, player_num, fence_type, coordinates):
         """Places a given Player's fence of given fence_type at the given
         coordinates, if it is a valid fence placement. If not a valid
         fence placement or game has already been won, return False.
         Otherwise return True."""
-        pass
+        if player_num == 1:
+            player = self.get_p1()
+        else:
+            player = self.get_p2()
+        if player.get_fence_count() < 1:
+            return False
+        if not self._Board.validate_fence_place(coordinates):
+            return False
+        if fence_type == 'v':
+            self.get_board().get_v_fence().append(coordinates)
+        else:
+            self.get_board().get_h_fence().append(coordinates)
+        player.sub_fence_count()
+        return True
 
-    def is_winner(self, player):
+    def is_winner(self, player_num):
         """Returns True if a given Player is the winner of the game.
         Otherwise returns False."""
-        pass
+
+        positions = self.get_board().get_player_positions()
+        if player_num == 1:
+            position = positions[0]
+            if position[0] == 8:
+                return True
+        else:
+            position = positions[1]
+            if position[0] == 0:
+                return True
+        return False
 
 
 class Board:
@@ -81,7 +111,18 @@ class Board:
 
         self._cells = list()
         self._v_fence = list()
+        for num in range(9):
+            self._v_fence.append((0, num))
+        for num in range(9):
+            self._v_fence.append((9, num))
+
         self._h_fence = list()
+        for num in range(9):
+            self._h_fence.append((num, 0))
+        for num in range(9):
+            self._h_fence.append((num, 9))
+
+        self._player_positions = [(0, 4), (8, 4)]
         for row in range(9):
             for column in range(9):
                 self._cells.append((column, row))
@@ -103,18 +144,56 @@ class Board:
         is already at the given coordinates parameter, that the player has
         fences available to them, and that the fence is inbounds of the
         Board."""
-        pass
+        return True
 
     def validate_pawn_move(self, coordinates):
         """Validates the Player move by ensuring that there is no fence
         blocking their path, that the move is inbounds of the board, and
         that the move is valid given the circumstance.
         Takes a coordinates parameter."""
-        pass
+        return True
+
+    def get_player_positions(self):
+        return self._player_positions
+
+    def set_player_positions(self, player, coordinates):
+        """Sets a given player's position to a given coordinate on the board."""
+        self._player_positions[player-1] = coordinates
 
     def print_board(self):
         """Prints the board out for debugging purposes."""
-        pass
+        column = 0
+        for row in range(10):
+            while column < 9:
+                if (column, row) in self._h_fence:
+                    print(' _', end='')
+                    column += 1
+                else:
+                    print('  ', end='')
+                    column += 1
+
+            if row == 9:
+                continue
+
+            print('\n', end='')
+            column = 0
+            while column < 10:
+                if (column, row) in self._v_fence:
+                    print('|', end='')
+                else:
+                    print(' ', end='')
+
+                if (column, row) == self._player_positions[0]:
+                    print('1', end='')
+                elif (column, row) == self._player_positions[1]:
+                    print('2', end='')
+                elif column < 9:
+                    print('+', end='')
+                column += 1
+
+            print('\n', end='')
+            column = 0
+        print('\n')
 
 
 class Player:
@@ -132,20 +211,17 @@ class Player:
 
         self._player = number
 
-        if self._player == 1:
-            self._player_position = (0, 4)
-        elif self._player == 2:
-            self._player_position = (8, 4)
-
         self._fences = 10
-
-    def get_player_position(self):
-        """Returns the player position coordinates."""
-        return self._player_position
 
     def get_fence_count(self):
         """Returns the number of fences the Player has."""
         return self._fences
+
+    def sub_fence_count(self):
+        """Subtracts 1 from the player's fence count."""
+        self._fences -= 1
+        return
+
 
 
 
