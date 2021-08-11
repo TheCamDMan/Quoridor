@@ -53,9 +53,13 @@ class QuoridorGame:
             return False
         if self.is_winner(2):
             return False
-        if not self._Board.validate_pawn_move(coordinates):
+        if not self.validate_pawn_move(player_num, coordinates):
             return False
         self.get_board().set_player_positions(player_num, coordinates)
+        if player_num == 1:
+            self.set_player_turn(2)
+        else:
+            self.set_player_turn(1)
         return True
 
     def place_fence(self, player_num, fence_type, coordinates):
@@ -67,16 +71,210 @@ class QuoridorGame:
             player = self.get_p1()
         else:
             player = self.get_p2()
+
         if player.get_fence_count() < 1:
             return False
-        if not self._Board.validate_fence_place(coordinates):
+        if not self.validate_fence_place(player_num, fence_type, coordinates):
             return False
+
         if fence_type == 'v':
             self.get_board().get_v_fence().append(coordinates)
         else:
             self.get_board().get_h_fence().append(coordinates)
+
         player.sub_fence_count()
+        if player_num == 1:
+            self.set_player_turn(2)
+        else:
+            self.set_player_turn(1)
+
         return True
+
+    def validate_fence_place(self, player_num, fence_type, coordinates):
+        """Validates the placement of the fences by ensuring that no fence
+        is already at the given coordinates parameter, that the player has
+        fences available to them, and that the fence is inbounds of the
+        Board."""
+        return True
+
+    def validate_pawn_move(self, player_num, coordinates):
+        """Validates the Player move by ensuring that there is no fence
+        blocking their path, that the move is inbounds of the board, and
+        that the move is valid given the circumstance.
+        Takes a coordinates parameter."""
+
+        # checks if it is player's turn
+        if self.get_player_turn() != player_num:
+            return False
+
+        # initializes the position variables for ease of use
+        positions = self.get_board().get_player_positions()
+
+        # can't move pawn on top of other pawn
+        if coordinates in positions:
+            return False
+        if player_num == 1:
+            position = positions[0]
+        else:
+            position = positions[1]
+
+        current_x = position[0]
+        current_y = position[1]
+        future_x = coordinates[0]
+        future_y = coordinates[1]
+
+        # checks if player tries to move too many spaces
+        if abs(future_x - current_x) > 2:
+            return False
+        if abs(future_y - current_y) > 2:
+            return False
+
+        # checks if player is moving diagonal
+        if future_x != current_x and future_y != current_y:
+            if player_num == 1:
+                opponent_pos = positions[1]
+            else:
+                opponent_pos = positions[0]
+
+            # checks to see if there is a fence in the way
+            if future_x > current_x:  # if moving right
+                if (future_x, future_y) in self.get_board().get_v_fence():
+                    return False
+
+            elif future_x < current_x:  # if moving left
+                if (current_x, current_y) in self.get_board().get_v_fence():
+                    return False
+
+            elif future_y > current_y:  # if moving down
+                if (future_x, future_y) in self.get_board().get_h_fence():
+                    return False
+
+            elif future_y < current_y:  # if moving up
+                if (current_x, current_y) in self.get_board().get_h_fence():
+                    return False
+
+            # validates the diagonal movement
+            return self.diagonal_validation(current_x, current_y, future_x, future_y, opponent_pos)
+
+        # not moving diagonal
+        if player_num == 1:
+            opponent_pos = positions[1]
+        else:
+            opponent_pos = positions[0]
+
+        # not moving diagonal, checks if fence in the way
+        if future_x > current_x:    # if moving right
+            if (future_x, future_y) in self.get_board().get_v_fence():
+                return False
+
+        elif future_x < current_x:  # if moving left
+            if (current_x, current_y) in self.get_board().get_v_fence():
+                return False
+
+        elif future_y > current_y:  # if moving down
+            if (future_x, future_y) in self.get_board().get_h_fence():
+                return False
+
+        elif future_y < current_y:  # if moving up
+            if (current_x, current_y) in self.get_board().get_h_fence():
+                return False
+
+        # returns False if player tries to jump and opponent is not in the way or there
+        # is a fence in the way
+        if future_x - current_x == 2:
+            if opponent_pos != (current_x + 1, current_y) or (current_x + 2, current_y) \
+                    in self.get_board().get_v_fence():
+                return False
+        elif future_x - current_x == -2:
+            if opponent_pos != (current_x - 1, current_y) or (current_x - 1, current_y) \
+                    in self.get_board().get_v_fence():
+                return False
+        elif future_y - current_y == 2:
+            if opponent_pos != (current_x, current_y + 1) or (current_x, current_y + 2) \
+                    in self.get_board().get_h_fence():
+                return False
+        elif future_y - current_y == -2:
+            if opponent_pos != (current_x, current_y - 1) or (current_x, current_y - 1) \
+                    in self.get_board().get_h_fence():
+                return False
+
+        return True
+
+    def diagonal_validation(self, current_x, current_y, future_x, future_y, opponent_pos):
+        """Validates a diagonal move by the player. The only time it will return true is if the opponent
+        is blocking the forward movement of the player."""
+
+        # if moving up right
+        if future_x > current_x and future_y < current_y:
+
+            # if opponent is to the right, there is a fence behind the opponent,
+            # and there is no fence next to opponent ,return True
+            if opponent_pos == (current_x+1, current_y) and \
+                    (current_x+2, current_y) in self.get_board().get_v_fence() and \
+                    (current_x+1, current_y) not in self.get_board().get_h_fence():
+                return True
+
+            # if opponent is above, there is a fence behind the opponent,
+            # and there is no fence next to opponent ,return True
+            if opponent_pos == (current_x, current_y-1) and \
+                    (current_x, current_y-1) in self.get_board().get_v_fence() and \
+                    (current_x+1, current_y-1) not in self.get_board().get_v_fence():
+                return True
+            return False
+
+        # if moving up left
+        elif future_x < current_x and future_y < current_y:
+
+            # if opponent is above, there is a fence behind the opponent,
+            # and there is no fence next to opponent ,return True
+            if opponent_pos == (current_x, current_y-1) and \
+                    (current_x, current_y-1) in self.get_board().get_h_fence() and \
+                    (current_x, current_y-1) not in self.get_board().get_v_fence():
+                return True
+
+            # if opponent is to the left, there is a fence behind the opponent,
+            # and there is no fence next to opponent ,return True
+            if opponent_pos == (current_x-1, current_y) and \
+                    (current_x-1, current_y) in self.get_board().get_v_fence() and \
+                    (current_x-1, current_y) not in self.get_board().get_h_fence():
+                return True
+            return False
+
+        # if moving down left
+        elif future_x < current_x and future_y > current_y:
+
+            # if opponent is to the left, there is a fence behind the opponent,
+            # and there is no fence next to opponent ,return True
+            if opponent_pos == (current_x-1, current_y) and \
+                    (current_x-1, current_y) in self.get_board().get_v_fence() and \
+                    (current_x-1, current_y+1) not in self.get_board().get_h_fence():
+                return True
+
+            # if opponent is below, there is a fence behind the opponent,
+            # and there is no fence next to opponent ,return True
+            if opponent_pos == (current_x, current_y+1) and \
+                    (current_x, current_y+2) in self.get_board().get_h_fence() and \
+                    (current_x, current_y+1) not in self.get_board().get_v_fence():
+                return True
+            return False
+
+        # if moving down right
+        elif future_x > current_x and future_y > current_y:
+
+            # if opponent is to below, there is a fence behind the opponent,
+            # and there is no fence next to opponent ,return True
+            if opponent_pos == (current_x, current_y+1) and \
+                    (current_x, current_y+2) in self.get_board().get_h_fence() and \
+                    (current_x+1, current_y+1 not in self.get_board().get_v_fence()):
+                return True
+
+            # if opponent is to the right, there is a fence behind the opponent,
+            # and there is no fence next to opponent ,return True
+            if opponent_pos == (current_x+1, current_y) and \
+                    (current_x+2, current_y) in self.get_board().get_v_fence() and \
+                    (current_x+1, current_y+1) not in self.get_board().get_h_fence():
+                return True
+            return False
 
     def is_winner(self, player_num):
         """Returns True if a given Player is the winner of the game.
@@ -85,13 +283,50 @@ class QuoridorGame:
         positions = self.get_board().get_player_positions()
         if player_num == 1:
             position = positions[0]
-            if position[0] == 8:
+            if position[1] == 8:
                 return True
         else:
             position = positions[1]
-            if position[0] == 0:
+            if position[1] == 0:
                 return True
         return False
+
+    def print_board(self):
+        """Prints the board out for debugging purposes."""
+        column = 0
+        board = self.get_board()
+        for row in range(10):
+            while column < 9:
+                if (column, row) in board.get_h_fence():
+                    print(' _', end='')
+                    column += 1
+                else:
+                    print('  ', end='')
+                    column += 1
+
+            if row == 9:
+                continue
+
+            print('\n', end='')
+            column = 0
+            while column < 10:
+                if (column, row) in board.get_v_fence():
+                    print('|', end='')
+                else:
+                    print(' ', end='')
+
+                player_positions = board.get_player_positions()
+                if (column, row) == player_positions[0]:
+                    print('1', end='')
+                elif (column, row) == player_positions[1]:
+                    print('2', end='')
+                elif column < 9:
+                    print('+', end='')
+                column += 1
+
+            print('\n', end='')
+            column = 0
+        print('\n')
 
 
 class Board:
@@ -122,7 +357,7 @@ class Board:
         for num in range(9):
             self._h_fence.append((num, 9))
 
-        self._player_positions = [(0, 4), (8, 4)]
+        self._player_positions = [(4, 0), (4, 8)]
         for row in range(9):
             for column in range(9):
                 self._cells.append((column, row))
@@ -139,61 +374,12 @@ class Board:
         """Returns the list of horizontal fence coordinates."""
         return self._h_fence
 
-    def validate_fence_place(self, coordinates):
-        """Validates the placement of the fences by ensuring that no fence
-        is already at the given coordinates parameter, that the player has
-        fences available to them, and that the fence is inbounds of the
-        Board."""
-        return True
-
-    def validate_pawn_move(self, coordinates):
-        """Validates the Player move by ensuring that there is no fence
-        blocking their path, that the move is inbounds of the board, and
-        that the move is valid given the circumstance.
-        Takes a coordinates parameter."""
-        return True
-
     def get_player_positions(self):
         return self._player_positions
 
     def set_player_positions(self, player, coordinates):
         """Sets a given player's position to a given coordinate on the board."""
         self._player_positions[player-1] = coordinates
-
-    def print_board(self):
-        """Prints the board out for debugging purposes."""
-        column = 0
-        for row in range(10):
-            while column < 9:
-                if (column, row) in self._h_fence:
-                    print(' _', end='')
-                    column += 1
-                else:
-                    print('  ', end='')
-                    column += 1
-
-            if row == 9:
-                continue
-
-            print('\n', end='')
-            column = 0
-            while column < 10:
-                if (column, row) in self._v_fence:
-                    print('|', end='')
-                else:
-                    print(' ', end='')
-
-                if (column, row) == self._player_positions[0]:
-                    print('1', end='')
-                elif (column, row) == self._player_positions[1]:
-                    print('2', end='')
-                elif column < 9:
-                    print('+', end='')
-                column += 1
-
-            print('\n', end='')
-            column = 0
-        print('\n')
 
 
 class Player:
@@ -210,7 +396,6 @@ class Player:
         coordinates based on which Player they are."""
 
         self._player = number
-
         self._fences = 10
 
     def get_fence_count(self):
@@ -223,99 +408,4 @@ class Player:
         return
 
 
-
-
-"""DETAILED TEXT DESCRIPTIONS OF HOW TO HANDLE THE SCENARIOS
-
-1. How to store the Board:
-
-Board will be stored as a list of tuples that contain the coordinates
-of each cell. The fences will be stored as the coordinates where they 
-were placed in the list that corresponds to the orientation of the fence.
-
-2. Initializing the board:
-    
-    for each row up to 8:
-        for each column up to 8:
-            add a tuple with those coordinates to the list
-    
-    make a list to hold player coordinates
-    make a list to hold vertical fences
-    make a list to hold horizontal fences
-
-3. How to track which player's turn it is to play:
-    
-    create a data-member in QuoridorGame class that will store player_turn
-    as a variable, starting with 1 when initialized for the first time.
-
-    when Player takes a turn, whether it be placing fence or moving pawn,
-    use set_player_turn to set the next move to the opposite Player's turn.
-
-4. How to validate moving of a pawn:
-
-    look at the pawn's position
-    if pawn is trying to move outside of edges of board:
-        return False
-    if pawn is moving right:
-        check vertical fence list for a fence at next cell
-        if there is a fence:
-            return False
-        if there is no fence:
-            update pawn position
-            return True
-    if pawn is moving up:
-        check horizontal fence list for a fence at the current cell
-        if there is a fence:
-            return False
-        if there if no fence:
-            update pawn position
-            return True
-    if pawn is moving down:
-        check horizontal fence list for a fence a the cell below current cell
-        if there is a fence:
-            return False
-        if there is no fence:
-            update fence position
-            return True
-    if pawn is moving left:
-        check vertical fence list for a fence at the current cell
-        if there is a fence:
-            return False
-        if there is no fence:
-            update pawn position
-            return True
-    if pawn if moving diagonal:
-        check to see if other player is in the position directly adjacent to the player
-        if not:
-            return False
-        else:
-            update player position
-            return True
-            
-5. How to validate placing of the fences:
-
-    store the type of fence and desired coordinates in variable
-    if the fence is trying to be placed outside the edges of board:
-        return False
-    if there is a fence of the same type at that position:
-        return False
-    else:
-        update player fence count
-        store fence coordinates into the correct fence type list
-        
-6. How to track fences on and off the board:
-
-    Player has data member that will keep track of fence count.
-    Each time player places a new fence, the count will be decremented.
-    If count is 0, player will not be able to place fence.
-    
-    Fences on the board will be tracked by two lists. One for vertical
-    fences and one for horizontal fences.
-    
-7. How to track the pawn's position on the board:
-
-    player position will be stored as a data member in the Player class.
-    It will have a get and set method in order to access and change.
-    Position will be cross-referenced with fence lists in Board class to ensure
-    validity of move.
-    """
+q = QuoridorGame()
