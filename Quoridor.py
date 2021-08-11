@@ -1,5 +1,5 @@
 # Author: Cameron Blankenship
-# Date: 8/9/2021
+# Date: 8/11/2021
 # Description: A game of Quoridor with classes representing the board as
 #              a 9 x 9 grid and two players. Players take turns either moving their pawn
 #              one cell or placing a fence to block the movement of the other player.
@@ -49,17 +49,25 @@ class QuoridorGame:
         """Moves the given Player to the given coordinates on the Board, if
         it is a valid move. If move is forbidden or game has already won,
         return False. Otherwise return True."""
+
+        # no move may be played if game is already won
         if self.is_winner(1):
             return False
         if self.is_winner(2):
             return False
+
+        # validates player move
         if not self.validate_pawn_move(player_num, coordinates):
             return False
+
         self.get_board().set_player_positions(player_num, coordinates)
+
+        # updates player turn
         if player_num == 1:
             self.set_player_turn(2)
         else:
             self.set_player_turn(1)
+
         return True
 
     def place_fence(self, player_num, fence_type, coordinates):
@@ -67,22 +75,29 @@ class QuoridorGame:
         coordinates, if it is a valid fence placement. If not a valid
         fence placement or game has already been won, return False.
         Otherwise return True."""
+
+        # no move may be played if game is already won
+        if self.is_winner(1):
+            return False
+        if self.is_winner(2):
+            return False
+
         if player_num == 1:
             player = self.get_p1()
         else:
             player = self.get_p2()
 
-        if player.get_fence_count() < 1:
-            return False
         if not self.validate_fence_place(player_num, fence_type, coordinates):
             return False
 
+        # adds the fence to corresponding fence type list
         if fence_type == 'v':
             self.get_board().get_v_fence().append(coordinates)
         else:
             self.get_board().get_h_fence().append(coordinates)
 
         player.sub_fence_count()
+
         if player_num == 1:
             self.set_player_turn(2)
         else:
@@ -95,13 +110,47 @@ class QuoridorGame:
         is already at the given coordinates parameter, that the player has
         fences available to them, and that the fence is inbounds of the
         Board."""
+
+        # checks if it is player's turn
+        if self.get_player_turn() != player_num:
+            return False
+
+        # returns false if given an invalid fence_type
+        if fence_type != 'v' and fence_type != 'h':
+            return False
+
+        # returns false if there is a fence already at the location or
+        # if player tries to place a fence outside the border of the board
+        if fence_type == 'v':
+            if coordinates in self.get_board().get_v_fence():
+                return False
+            if coordinates[0] < 0 or coordinates[0] > 9:
+                return False
+            if coordinates[1] < 0 or coordinates[1] > 8:
+                return False
+        if fence_type == 'h':
+            if coordinates in self.get_board().get_h_fence():
+                return False
+            if coordinates[0] < 0 or coordinates[0] > 8:
+                return False
+            if coordinates[1] < 0 or coordinates[1] > 9:
+                return False
+
+        # returns false if the player has no fences left
+        if player_num == 1:
+            player = self.get_p1()
+        else:
+            player = self.get_p2()
+        if player.get_fence_count() < 1:
+            return False
+
         return True
 
     def validate_pawn_move(self, player_num, coordinates):
         """Validates the Player move by ensuring that there is no fence
         blocking their path, that the move is inbounds of the board, and
         that the move is valid given the circumstance.
-        Takes a coordinates parameter."""
+        Takes a coordinates parameter and player number."""
 
         # checks if it is player's turn
         if self.get_player_turn() != player_num:
@@ -202,7 +251,7 @@ class QuoridorGame:
 
     def diagonal_validation(self, current_x, current_y, future_x, future_y, opponent_pos):
         """Validates a diagonal move by the player. The only time it will return true is if the opponent
-        is blocking the forward movement of the player."""
+        is blocking the forward movement of the player and there are no fences in the way."""
 
         # if moving up right
         if future_x > current_x and future_y < current_y:
@@ -334,9 +383,8 @@ class Board:
     on the Board. Each coordinate represents a cell and is referenced by the top left
     corner. This class also has two lists that store the coordinates of vertical fences and
     horizontal fences.
-    This class is also responsible for validating Player movements, as
-    well as where each fence is placed and validating fence placement. This class will
-    communicate with Player and QuoridorGame in order to validate Player moves and fence
+    This list primarily responsible for storing the coordinates of the cells, fences, and players.
+    This class will communicate with QuoridorGame in order to validate Player moves and fence
     placement."""
 
     def __init__(self):
@@ -375,6 +423,7 @@ class Board:
         return self._h_fence
 
     def get_player_positions(self):
+        """Returns the list of player positions."""
         return self._player_positions
 
     def set_player_positions(self, player, coordinates):
@@ -384,16 +433,14 @@ class Board:
 
 class Player:
     """Represents a player of the QuoridorGame. Starts at their base line,
-    in the middle of the left or right edge of the board. Has ten fences
+    in the middle of the bottom (4,8) or top (4,0) edge of the board. Has 10 fences
     to start with.
-    This class is responsible for tracking how many fences the Player has,
-    moving the pawn across the board, and placing fences on the board.
-    This class will communicate with Board in order to track movements, and
+    This class is responsible for tracking how many fences the Player has.
+    This class will communicate with Board in order to place fences, and
     will communicate with QuoridorGame to change Player turn."""
 
     def __init__(self, number):
-        """Initialize the Player with number, ten fences, and starting
-        coordinates based on which Player they are."""
+        """Initialize the Player with a number and 10 fences."""
 
         self._player = number
         self._fences = 10
@@ -406,6 +453,3 @@ class Player:
         """Subtracts 1 from the player's fence count."""
         self._fences -= 1
         return
-
-
-q = QuoridorGame()
