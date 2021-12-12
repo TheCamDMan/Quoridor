@@ -4,7 +4,7 @@
 #              a 9 x 9 grid and two players. Players take turns either moving their pawn
 #              one cell or placing a fence to block the movement of the other player.
 #              If either player reaches the base line of the other player, the game is
-#              won by that player
+#              won by that player.
 
 
 class QuoridorGame:
