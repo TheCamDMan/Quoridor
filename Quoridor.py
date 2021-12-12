@@ -6,6 +6,7 @@
 #              If either player reaches the base line of the other player, the game is
 #              won by that player.
 
+
 class QuoridorGame:
     """Represents a Quoridor game that has a Board and two Players.
     Players take turns either moving or placing fences to block the
@@ -14,8 +15,8 @@ class QuoridorGame:
     This class is responsible for initializing the game with a Board
     with two Players, and tracking Player turn. This class will have
     the Player class and Board class as data members, thus utilizing
-    composition. This class is also responsible for tracking the player
-    turns."""
+    composition.
+    """
 
     def __init__(self):
         """Initializes the game Board, Players 1 and 2, sets it as
@@ -91,7 +92,7 @@ class QuoridorGame:
             return False
 
         # adds the fence to corresponding fence type list
-        if fence_type == 'v':
+        if fence_type == "v":
             self.get_board().get_v_fence().append(coordinates)
         else:
             self.get_board().get_h_fence().append(coordinates)
@@ -116,25 +117,8 @@ class QuoridorGame:
             return False
 
         # returns false if given an invalid fence_type
-        if fence_type != 'v' and fence_type != 'h':
+        if fence_type != "v" and fence_type != "h":
             return False
-
-        # returns false if there is a fence already at the location or
-        # if player tries to place a fence outside the border of the board
-        if fence_type == 'v':
-            if coordinates in self.get_board().get_v_fence():
-                return False
-            if coordinates[0] < 0 or coordinates[0] > 9:
-                return False
-            if coordinates[1] < 0 or coordinates[1] > 8:
-                return False
-        if fence_type == 'h':
-            if coordinates in self.get_board().get_h_fence():
-                return False
-            if coordinates[0] < 0 or coordinates[0] > 8:
-                return False
-            if coordinates[1] < 0 or coordinates[1] > 9:
-                return False
 
         # returns false if the player has no fences left
         if player_num == 1:
@@ -143,6 +127,23 @@ class QuoridorGame:
             player = self.get_p2()
         if player.get_fence_count() < 1:
             return False
+
+        # returns false if there is a fence already at the location or
+        # if player tries to place a fence outside the border of the board
+        if fence_type == "v":
+            if coordinates in self.get_board().get_v_fence():
+                return False
+            if coordinates[0] < 0 or coordinates[0] > 9:
+                return False
+            if coordinates[1] < 0 or coordinates[1] > 8:
+                return False
+        if fence_type == "h":
+            if coordinates in self.get_board().get_h_fence():
+                return False
+            if coordinates[0] < 0 or coordinates[0] > 8:
+                return False
+            if coordinates[1] < 0 or coordinates[1] > 9:
+                return False
 
         return True
 
@@ -162,6 +163,7 @@ class QuoridorGame:
         # can't move pawn on top of other pawn
         if coordinates in positions:
             return False
+
         if player_num == 1:
             position = positions[0]
         else:
@@ -203,7 +205,9 @@ class QuoridorGame:
                     return False
 
             # validates the diagonal movement
-            return self.diagonal_validation(current_x, current_y, future_x, future_y, opponent_pos)
+            return self.diagonal_validation(
+                current_x, current_y, future_x, future_y, opponent_pos
+            )
 
         # not moving diagonal
         if player_num == 1:
@@ -212,7 +216,7 @@ class QuoridorGame:
             opponent_pos = positions[0]
 
         # not moving diagonal, checks if fence in the way
-        if future_x > current_x:    # if moving right
+        if future_x > current_x:  # if moving right
             if (future_x, future_y) in self.get_board().get_v_fence():
                 return False
 
@@ -231,25 +235,35 @@ class QuoridorGame:
         # returns False if player tries to jump and opponent is not in the way or there
         # is a fence in the way
         if future_x - current_x == 2:
-            if opponent_pos != (current_x + 1, current_y) or (current_x + 2, current_y) \
-                    in self.get_board().get_v_fence():
+            if (
+                opponent_pos != (current_x + 1, current_y)
+                or (current_x + 2, current_y) in self.get_board().get_v_fence()
+            ):
                 return False
         elif future_x - current_x == -2:
-            if opponent_pos != (current_x - 1, current_y) or (current_x - 1, current_y) \
-                    in self.get_board().get_v_fence():
+            if (
+                opponent_pos != (current_x - 1, current_y)
+                or (current_x - 1, current_y) in self.get_board().get_v_fence()
+            ):
                 return False
         elif future_y - current_y == 2:
-            if opponent_pos != (current_x, current_y + 1) or (current_x, current_y + 2) \
-                    in self.get_board().get_h_fence():
+            if (
+                opponent_pos != (current_x, current_y + 1)
+                or (current_x, current_y + 2) in self.get_board().get_h_fence()
+            ):
                 return False
         elif future_y - current_y == -2:
-            if opponent_pos != (current_x, current_y - 1) or (current_x, current_y - 1) \
-                    in self.get_board().get_h_fence():
+            if (
+                opponent_pos != (current_x, current_y - 1)
+                or (current_x, current_y - 1) in self.get_board().get_h_fence()
+            ):
                 return False
 
         return True
 
-    def diagonal_validation(self, current_x, current_y, future_x, future_y, opponent_pos):
+    def diagonal_validation(
+        self, current_x, current_y, future_x, future_y, opponent_pos
+    ):
         """Validates a diagonal move by the player. The only time it will return true is if the opponent
         is blocking the forward movement of the player and there are no fences in the way."""
 
@@ -258,16 +272,20 @@ class QuoridorGame:
 
             # if opponent is to the right, there is a fence behind the opponent,
             # and there is no fence next to opponent ,return True
-            if opponent_pos == (current_x+1, current_y) and \
-                    (current_x+2, current_y) in self.get_board().get_v_fence() and \
-                    (current_x+1, current_y) not in self.get_board().get_h_fence():
+            if (
+                opponent_pos == (current_x + 1, current_y)
+                and (current_x + 2, current_y) in self.get_board().get_v_fence()
+                and (current_x + 1, current_y) not in self.get_board().get_h_fence()
+            ):
                 return True
 
             # if opponent is above, there is a fence behind the opponent,
             # and there is no fence next to opponent ,return True
-            if opponent_pos == (current_x, current_y-1) and \
-                    (current_x, current_y-1) in self.get_board().get_v_fence() and \
-                    (current_x+1, current_y-1) not in self.get_board().get_v_fence():
+            if (
+                opponent_pos == (current_x, current_y - 1)
+                and (current_x, current_y - 1) in self.get_board().get_h_fence()
+                and (current_x + 1, current_y - 1) not in self.get_board().get_v_fence()
+            ):
                 return True
             return False
 
@@ -276,16 +294,20 @@ class QuoridorGame:
 
             # if opponent is above, there is a fence behind the opponent,
             # and there is no fence next to opponent ,return True
-            if opponent_pos == (current_x, current_y-1) and \
-                    (current_x, current_y-1) in self.get_board().get_h_fence() and \
-                    (current_x, current_y-1) not in self.get_board().get_v_fence():
+            if (
+                opponent_pos == (current_x, current_y - 1)
+                and (current_x, current_y - 1) in self.get_board().get_h_fence()
+                and (current_x, current_y - 1) not in self.get_board().get_v_fence()
+            ):
                 return True
 
             # if opponent is to the left, there is a fence behind the opponent,
             # and there is no fence next to opponent ,return True
-            if opponent_pos == (current_x-1, current_y) and \
-                    (current_x-1, current_y) in self.get_board().get_v_fence() and \
-                    (current_x-1, current_y) not in self.get_board().get_h_fence():
+            if (
+                opponent_pos == (current_x - 1, current_y)
+                and (current_x - 1, current_y) in self.get_board().get_v_fence()
+                and (current_x - 1, current_y) not in self.get_board().get_h_fence()
+            ):
                 return True
             return False
 
@@ -294,16 +316,20 @@ class QuoridorGame:
 
             # if opponent is to the left, there is a fence behind the opponent,
             # and there is no fence next to opponent ,return True
-            if opponent_pos == (current_x-1, current_y) and \
-                    (current_x-1, current_y) in self.get_board().get_v_fence() and \
-                    (current_x-1, current_y+1) not in self.get_board().get_h_fence():
+            if (
+                opponent_pos == (current_x - 1, current_y)
+                and (current_x - 1, current_y) in self.get_board().get_v_fence()
+                and (current_x - 1, current_y + 1) not in self.get_board().get_h_fence()
+            ):
                 return True
 
             # if opponent is below, there is a fence behind the opponent,
             # and there is no fence next to opponent ,return True
-            if opponent_pos == (current_x, current_y+1) and \
-                    (current_x, current_y+2) in self.get_board().get_h_fence() and \
-                    (current_x, current_y+1) not in self.get_board().get_v_fence():
+            if (
+                opponent_pos == (current_x, current_y + 1)
+                and (current_x, current_y + 2) in self.get_board().get_h_fence()
+                and (current_x, current_y + 1) not in self.get_board().get_v_fence()
+            ):
                 return True
             return False
 
@@ -312,16 +338,20 @@ class QuoridorGame:
 
             # if opponent is to below, there is a fence behind the opponent,
             # and there is no fence next to opponent ,return True
-            if opponent_pos == (current_x, current_y+1) and \
-                    (current_x, current_y+2) in self.get_board().get_h_fence() and \
-                    (current_x+1, current_y+1 not in self.get_board().get_v_fence()):
+            if (
+                opponent_pos == (current_x, current_y + 1)
+                and (current_x, current_y + 2) in self.get_board().get_h_fence()
+                and (current_x + 1, current_y + 1 not in self.get_board().get_v_fence())
+            ):
                 return True
 
             # if opponent is to the right, there is a fence behind the opponent,
             # and there is no fence next to opponent ,return True
-            if opponent_pos == (current_x+1, current_y) and \
-                    (current_x+2, current_y) in self.get_board().get_v_fence() and \
-                    (current_x+1, current_y+1) not in self.get_board().get_h_fence():
+            if (
+                opponent_pos == (current_x + 1, current_y)
+                and (current_x + 2, current_y) in self.get_board().get_v_fence()
+                and (current_x + 1, current_y + 1) not in self.get_board().get_h_fence()
+            ):
                 return True
             return False
 
@@ -347,35 +377,35 @@ class QuoridorGame:
         for row in range(10):
             while column < 9:
                 if (column, row) in board.get_h_fence():
-                    print(' _', end='')
+                    print(" _", end="")
                     column += 1
                 else:
-                    print('  ', end='')
+                    print("  ", end="")
                     column += 1
 
             if row == 9:
                 continue
 
-            print('\n', end='')
+            print("\n", end="")
             column = 0
             while column < 10:
                 if (column, row) in board.get_v_fence():
-                    print('|', end='')
+                    print("|", end="")
                 else:
-                    print(' ', end='')
+                    print(" ", end="")
 
                 player_positions = board.get_player_positions()
                 if (column, row) == player_positions[0]:
-                    print('1', end='')
+                    print("1", end="")
                 elif (column, row) == player_positions[1]:
-                    print('2', end='')
+                    print("2", end="")
                 elif column < 9:
-                    print('+', end='')
+                    print("+", end="")
                 column += 1
 
-            print('\n', end='')
+            print("\n", end="")
             column = 0
-        print('\n')
+        print("\n")
 
 
 class Board:
@@ -428,7 +458,7 @@ class Board:
 
     def set_player_positions(self, player, coordinates):
         """Sets a given player's position to a given coordinate on the board."""
-        self._player_positions[player-1] = coordinates
+        self._player_positions[player - 1] = coordinates
 
 
 class Player:
@@ -453,3 +483,7 @@ class Player:
         """Subtracts 1 from the player's fence count."""
         self._fences -= 1
         return
+
+
+game = QuoridorGame()
+game.print_board()
