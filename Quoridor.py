@@ -483,7 +483,3 @@ class Player:
         """Subtracts 1 from the player's fence count."""
         self._fences -= 1
         return
-
-
-game = QuoridorGame()
-game.print_board()
