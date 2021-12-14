@@ -6,6 +6,34 @@
 #              If either player reaches the base line of the other player, the game is
 #              won by that player.
 
+import os
+import pygame as pg
+from pygame import color
+
+if not pg.font:
+    print("Warning, fonts disabled")
+if not pg.mixer:
+    print("Warning, sound disabled")
+
+main_dir = os.path.split(os.path.abspath(__file__))[0]
+data_dir = os.path.join(main_dir, "data")
+
+
+def load_image(name, colorKey=None, scale=1):
+    fullname = os.path.join(data_dir, name)
+    image = pg.image.load(fullname)
+
+    size = image.get_size()
+    size = (size[0] * scale, size[1] * scale)
+    image = pg.transform.scale(image, size)
+
+    image = image.convert()
+    if colorKey is not None:
+        if colorKey == -1:
+            colorKey = image.get_at((0, 0))
+        image.set_colorkey(colorKey, pg.RLEACCEL)
+    return image, image.get_rect()
+
 
 class QuoridorGame:
     """Represents a Quoridor game that has a Board and two Players.
@@ -485,5 +513,55 @@ class Player:
         return
 
 
-game = QuoridorGame()
-game.print_board()
+def main():
+    """ """
+    black = (0, 0, 0)
+    white = (255, 255, 255)
+    red = (255, 0, 0)
+
+    WIDTH = 20
+    HEIGHT = 20
+    MARGIN = 5
+    grid = []
+    for row in range(10):
+        grid.append([])
+        for column in range(10):
+            grid[row].append(0)
+    pg.init()
+    window_size = [255, 255]
+    scr = pg.display.set_mode(window_size)
+    pg.display.set_caption("Quoridor")
+    done = False
+    clock = pg.time.Clock()
+    while not done:
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                done = True
+            elif event.type == pg.MOUSEBUTTONDOWN:
+                pos = pg.mouse.get_pos()
+                column = pos[0] // (WIDTH + MARGIN)
+                row = pos[1] // (HEIGHT + MARGIN)
+                grid[row][column] = 1
+        scr.fill(black)
+        for row in range(10):
+            for column in range(10):
+                color = white
+                if grid[row][column] == 1:
+                    color = red
+                pg.draw.rect(
+                    scr,
+                    color,
+                    [
+                        (MARGIN + WIDTH) * column + MARGIN,
+                        (MARGIN + HEIGHT) * row + MARGIN,
+                        WIDTH,
+                        HEIGHT,
+                    ],
+                )
+        clock.tick(50)
+        pg.display.flip()
+    pg.quit()
+
+
+if __name__ == "__main__":
+    main()
