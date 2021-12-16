@@ -9,6 +9,7 @@
 import os
 import pygame as pg
 from pygame import color
+from pygame.constants import BLEND_MULT
 
 if not pg.font:
     print("Warning, fonts disabled")
@@ -17,6 +18,15 @@ if not pg.mixer:
 
 main_dir = os.path.split(os.path.abspath(__file__))[0]
 data_dir = os.path.join(main_dir, "data")
+
+# BOARD_SIZE does not work when changed, something for later
+BOARD_SIZE = (9, 9)
+WINDOW_SIZE = [750, 750]
+FENCE_WIDTH = 7
+SPACE_WIDTH = (WINDOW_SIZE[0] - FENCE_WIDTH * 10) / BOARD_SIZE[0]
+SPACE_HEIGHT = (WINDOW_SIZE[0] - FENCE_WIDTH * 10) / BOARD_SIZE[1]
+BORDER_COLOR = (255, 0, 0)
+FENCE_COLOR = (255, 0, 0)
 
 
 def load_image(name, colorKey=None, scale=1):
@@ -46,12 +56,12 @@ class QuoridorGame:
     composition.
     """
 
-    def __init__(self):
+    def __init__(self, board_size):
         """Initializes the game Board, Players 1 and 2, sets it as
         the first Player's turn."""
         self._P1 = Player(1)
         self._P2 = Player(2)
-        self._Board = Board()
+        self._Board = Board(board_size)
         self._player_turn = 1
 
     def get_board(self):
@@ -445,27 +455,27 @@ class Board:
     This class will communicate with QuoridorGame in order to validate Player moves and fence
     placement."""
 
-    def __init__(self):
+    def __init__(self, board_size):
         """Initializes the game board by storing the coordinates of the cells
         as tuples in a list, and stores the vertical and horizontal fences
         in their own lists."""
 
         self._cells = list()
         self._v_fence = list()
-        for num in range(9):
+        for num in range(board_size[0]):
             self._v_fence.append((0, num))
-        for num in range(9):
-            self._v_fence.append((9, num))
+        for num in range(board_size[1]):
+            self._v_fence.append((board_size[0], num))
 
         self._h_fence = list()
-        for num in range(9):
+        for num in range(board_size[1]):
             self._h_fence.append((num, 0))
-        for num in range(9):
-            self._h_fence.append((num, 9))
+        for num in range(board_size[1]):
+            self._h_fence.append((num, board_size[1]))
 
         self._player_positions = [(4, 0), (4, 8)]
-        for row in range(9):
-            for column in range(9):
+        for row in range(board_size[0]):
+            for column in range(board_size[1]):
                 self._cells.append((column, row))
 
     def get_cells(self):
@@ -489,7 +499,7 @@ class Board:
         self._player_positions[player - 1] = coordinates
 
 
-class Player:
+class Player(pg.sprite.Sprite):
     """Represents a player of the QuoridorGame. Starts at their base line,
     in the middle of the bottom (4,8) or top (4,0) edge of the board. Has 10 fences
     to start with.
@@ -499,8 +509,22 @@ class Player:
 
     def __init__(self, number):
         """Initialize the Player with a number and 10 fences."""
-
+        pg.sprite.Sprite.__init__(self)
         self._player = number
+        if number == 1:
+            self.image, self.rect = load_image("blue_piece.png", -1, 0.05)
+        else:
+            self.image, self.rect = load_image("red_piece.png", -1, 0.05)
+        if number == 1:
+            self.rect.top = (FENCE_WIDTH + SPACE_HEIGHT) * 0 + FENCE_WIDTH + 5
+            self.rect.centerx = (FENCE_WIDTH + SPACE_WIDTH / 2) + 4 * (
+                SPACE_WIDTH + FENCE_WIDTH
+            )
+        else:
+            self.rect.centerx = (FENCE_WIDTH + SPACE_WIDTH / 2) + 4 * (
+                SPACE_WIDTH + FENCE_WIDTH
+            )
+            self.rect.bottom = (FENCE_WIDTH + SPACE_HEIGHT) * 9 - 5
         self._fences = 10
 
     def get_fence_count(self):
@@ -512,53 +536,119 @@ class Player:
         self._fences -= 1
         return
 
+    def update(self, coordinates, turn):
+        """"""
+        if turn == 1:
+            self.rect.top = (
+                (FENCE_WIDTH + SPACE_HEIGHT) * coordinates[1] + FENCE_WIDTH + 5
+            )
+            self.rect.centerx = (FENCE_WIDTH + SPACE_WIDTH / 2) + coordinates[0] * (
+                SPACE_WIDTH + FENCE_WIDTH
+            )
+        else:
+            self.rect.centerx = (FENCE_WIDTH + SPACE_WIDTH / 2) + coordinates[0] * (
+                SPACE_WIDTH + FENCE_WIDTH
+            )
+            self.rect.bottom = (FENCE_WIDTH + SPACE_HEIGHT) * (coordinates[1] + 1) - 5
+
 
 def main():
     """ """
+    pg.init()
     black = (0, 0, 0)
     white = (255, 255, 255)
-    red = (255, 0, 0)
 
-    WIDTH = 20
-    HEIGHT = 20
-    MARGIN = 5
-    grid = []
-    for row in range(10):
-        grid.append([])
-        for column in range(10):
-            grid[row].append(0)
-    pg.init()
-    window_size = [255, 255]
-    scr = pg.display.set_mode(window_size)
+    screen = pg.display.set_mode(WINDOW_SIZE, pg.SCALED)
     pg.display.set_caption("Quoridor")
-    done = False
+    background = pg.Surface(screen.get_size())
+    background = background.convert()
+    background.fill((black))
+    screen.blit(background, (0, 0))
+    pg.display.flip()
+
+    game = QuoridorGame(BOARD_SIZE)
+    player_one = game.get_p1()
+    player_two = game.get_p2()
+    allsprites = pg.sprite.RenderPlain((player_one, player_two))
+
     clock = pg.time.Clock()
-    while not done:
+    going = True
+    while going:
+        clock.tick(60)
+
         for event in pg.event.get():
             if event.type == pg.QUIT:
-                done = True
+                going = False
             elif event.type == pg.MOUSEBUTTONDOWN:
                 pos = pg.mouse.get_pos()
-                column = pos[0] // (WIDTH + MARGIN)
-                row = pos[1] // (HEIGHT + MARGIN)
-                grid[row][column] = 1
-        scr.fill(black)
-        for row in range(10):
-            for column in range(10):
-                color = white
-                if grid[row][column] == 1:
-                    color = red
-                pg.draw.rect(
-                    scr,
-                    color,
-                    [
-                        (MARGIN + WIDTH) * column + MARGIN,
-                        (MARGIN + HEIGHT) * row + MARGIN,
-                        WIDTH,
-                        HEIGHT,
-                    ],
-                )
-        clock.tick(50)
+
+                mouse_x = pos[0] // (SPACE_WIDTH + FENCE_WIDTH)
+                mouse_y = pos[1] // (SPACE_HEIGHT + FENCE_WIDTH)
+                coordinates = (mouse_x, mouse_y)
+                print(coordinates)
+
+                on_v_fence = pos[0] % (SPACE_WIDTH + FENCE_WIDTH) < 15
+                on_h_fence = pos[1] % (FENCE_WIDTH + SPACE_WIDTH) < 15
+
+                if on_v_fence:
+                    game.place_fence(game.get_player_turn(), "v", coordinates)
+                elif on_h_fence:
+                    game.place_fence(game.get_player_turn(), "h", coordinates)
+                else:
+                    flag = game.move_pawn(game.get_player_turn(), coordinates)
+                    print(flag)
+                    if flag:
+                        if game.get_player_turn() == 2:
+                            player_one.update(coordinates, 1)
+                        else:
+                            player_two.update(coordinates, 2)
+
+        for coordinate in game.get_board().get_cells():
+            color = white
+            pg.draw.rect(
+                screen,
+                color,
+                [
+                    (FENCE_WIDTH + SPACE_WIDTH) * coordinate[0] + FENCE_WIDTH,
+                    (FENCE_WIDTH + SPACE_HEIGHT) * coordinate[1] + FENCE_WIDTH,
+                    SPACE_WIDTH,
+                    SPACE_HEIGHT,
+                ],
+            )
+
+        for coordinate in game.get_board().get_h_fence():
+            if coordinate[0] == 0:
+                color = BORDER_COLOR
+            else:
+                color = FENCE_COLOR
+            pg.draw.rect(
+                screen,
+                color,
+                [
+                    (FENCE_WIDTH + SPACE_WIDTH) * coordinate[0] + FENCE_WIDTH,
+                    (FENCE_WIDTH + SPACE_HEIGHT) * coordinate[1],
+                    SPACE_WIDTH,
+                    FENCE_WIDTH,
+                ],
+            )
+
+        for coordinate in game.get_board().get_v_fence():
+            if coordinate[1] == 0 or coordinate[1] == 9:
+                color = BORDER_COLOR
+            else:
+                color = FENCE_COLOR
+            pg.draw.rect(
+                screen,
+                color,
+                [
+                    (FENCE_WIDTH + SPACE_WIDTH) * coordinate[0],
+                    (FENCE_WIDTH + SPACE_HEIGHT) * coordinate[1] + FENCE_WIDTH,
+                    FENCE_WIDTH,
+                    SPACE_HEIGHT,
+                ],
+            )
+
+        allsprites.draw(screen)
         pg.display.flip()
     pg.quit()
 
